@@ -63,5 +63,18 @@ describe "Merchants API" do
     items_merchant2 = JSON.parse(response.body)["data"]
     expect(items_merchant2.count).to eq(2)
   end
+
+  it "finds a merchant from a query string" do 
+    merchant1 = Merchant.create(name: "Amazon")
+    merchant2 = Merchant.create(name: "Telerama")
+    merchant3 = Merchant.create(name: "Voila")
+    merchant4 = Merchant.create(name: "AskForIt")
+    merchant5 = Merchant.create(name: "CoolBiz")
+    get "/api/v1/merchants/find?name=Telerama" 
+    expect(response).to be_successful
+    merchant = JSON.parse(response.body)["data"]
+    expect(merchant["attributes"]["name"]).to eq("Telerama")
+    expect(merchant["id"]).to eq(merchant2.id.to_s)
+  end
     
 end
