@@ -60,9 +60,5 @@ describe "items API" do
     merchant_info = JSON.parse(response.body)["data"]
     expect(merchant_info["id"]).to eq(merchant.id.to_s)
   end
-
-  it "finds a merchant from a query string" do 
-    
-  end
   
 end
