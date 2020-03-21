@@ -5,6 +5,7 @@ require_relative '../../app/models/customer'
 desc "Loads the csv files and seeds the database"
 
 task csv_to_seed: :environment do
+  
 
   system 'rails db:{drop,create,migrate}'
 
