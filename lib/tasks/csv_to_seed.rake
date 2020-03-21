@@ -5,6 +5,7 @@ require_relative '../../app/models/customer'
 desc "Loads the csv files and seeds the database"
 
 task csv_to_seed: :environment do
+  
 
   CSV.foreach(Rails.root.join('lib/customers.csv'), headers: true) do |row|
     Customer.create({
