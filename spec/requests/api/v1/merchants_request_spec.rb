@@ -65,16 +65,57 @@ describe "Merchants API" do
   end
 
   it "finds a merchant from a query string" do 
-    merchant1 = Merchant.create(name: "Amazon")
     merchant2 = Merchant.create(name: "Telerama")
-    merchant3 = Merchant.create(name: "Voila")
+    merchant3 = Merchant.create(name: "Turing")
     merchant4 = Merchant.create(name: "AskForIt")
     merchant5 = Merchant.create(name: "CoolBiz")
-    get "/api/v1/merchants/find?name=Telerama" 
+    merchant1 = Merchant.create(name: "Ring World")
+    get "/api/v1/merchants/find?name=ring&created_at=#{merchant3.created_at.to_s}" 
     expect(response).to be_successful
     merchant = JSON.parse(response.body)["data"]
-    expect(merchant["attributes"]["name"]).to eq("Telerama")
-    expect(merchant["id"]).to eq(merchant2.id.to_s)
+    expect(merchant["attributes"]["name"]).to eq("Turing")
+    expect(merchant["id"]).to eq(merchant3.id.to_s)
+  end
+
+  it "returns all merchants matching a query" do
+    merchant2 = Merchant.create(name: "Telerama")
+    merchant3 = Merchant.create(name: "Turing")
+    merchant4 = Merchant.create(name: "AskForIt")
+    merchant5 = Merchant.create(name: "CoolBiz")
+    merchant1 = Merchant.create(name: "Ring World")
+    get "/api/v1/merchants/find_all?name=ring" 
+    expect(response).to be_successful
+    merchants = JSON.parse(response.body)["data"]
+    expect(merchants.count).to eq(2)
+    expect(merchants[0]["id"]).to eq(merchant1.id.to_s)
+    expect(merchants[1]["id"]).to eq(merchant3.id.to_s)
+    get "/api/v1/merchants/find_all?name=not_a_real_name" 
+    expect(response).to be_successful
+    merchants = JSON.parse(response.body)["data"]
+    expect(merchants.count).to eq(0)
+  end
+
+  it "returns the merchant(s) with the most revenues" do
+    num_customer = 50
+    num_merchant = 10
+    num_items_per_merchant = 10
+    num_invoice = 100
+    customers = create_list(:random_customer, num_customer)
+    merchants = create_list(:random_merchant, num_merchant)
+
+    merchants.each do |merchant|
+      create_list(:random_item, num_items_per_merchant, merchant: merchant)
+    end  
+    invoices = create_list(:invoice, num_invoice, merchant: merchants[rand(num_merchant)], customer: customers[rand(num_customer)])
+    invoices.each do |invoice|
+      5.times do
+        random_item = merchants[rand(num_merchant)].items[rand(num_items_per_merchant)]
+        create(:invoice_item, item: random_item, unit_price: random_item.unit_price, quantity: (rand(10)+1), invoice: invoice)
+      end
+      create(:random_transaction, result: rand(1), invoice: invoice)
+    end
+    
+    
   end
     
 end
