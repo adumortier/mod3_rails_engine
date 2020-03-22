@@ -1,14 +1,23 @@
 class Api::V1::Merchants::SearchController < ApplicationController 
 
-  def show 
-    merchant = Merchant.where(Merchant.arel_table[:name].lower.matches("%#{params['name'].downcase}%"))
-    require 'pry'; binding.pry
-    # query = Merchant.params_to_query(params)
-    # if params['name']
-    #   merchant = Merchant.where("name = #{params['name']}")
-    #   require 'pry'; binding.pry
-    #   render json: MerchantSerializer.new(Merchant.where(name: params['name']).first)
-    # end
+  def show
+    @merchants = filter
+    render json: MerchantSerializer.new(@merchants.first)
+  end
+
+  def index 
+    @merchants = filter.order(:name)
+    render json: MerchantSerializer.new(@merchants)
+  end
+
+  private
+
+  def filter
+    @merchants = Merchant.where(nil)
+    @merchants = @merchants.filter_by_name(params[:name]) if params[:name].present?
+    @merchants = @merchants.filter_by_created_at(params[:created_at]) if params[:created_at].present?
+    @merchants = @merchants.filter_by_updated_at(params[:updated_at]) if params[:updated_at].present?
+    @merchants
   end
 
 end
