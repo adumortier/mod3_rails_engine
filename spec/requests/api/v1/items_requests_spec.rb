@@ -34,7 +34,7 @@ describe "items API" do
     merchant = create(:merchant)
     item = create(:item, merchant: merchant)
     item_before_update = item
-    item_params = {name: "a better desk", description: "cooler", unit_price: "120", merchant_id: merchant.id}
+    item_params = {name: "a better desk", description: "cooler", unit_price: 120, merchant_id: merchant.id}
     patch "/api/v1/items/#{item.id}", params: {item: item_params}
     expect(response).to be_successful
     item_after_update = Item.find(item.id)
@@ -59,6 +59,43 @@ describe "items API" do
     expect(response).to be_successful
     merchant_info = JSON.parse(response.body)["data"]
     expect(merchant_info["id"]).to eq(merchant.id.to_s)
+  end
+
+  it "sends the first item matching a query" do 
+    merchant = Merchant.create(name: "MonsterShop")
+    item1_params = {name: "desk", description: "cool", unit_price: 12, merchant_id: merchant.id}
+    item1 = Item.create!(item1_params)
+    item2_params = {name: "door", description: "long", unit_price: 150, merchant_id: merchant.id}
+    item2 = Item.create!(item2_params)
+    item3_params = {name: "modern desk", description: "very stylish and functional", unit_price: 200, merchant_id: merchant.id}
+    item3 = Item.create!(item3_params)
+    get "/api/v1/items/find?name=desk&description=stylish" 
+    expect(response).to be_successful
+    item = JSON.parse(response.body)["data"]
+    expect(item["attributes"]["unit_price"]).to eq(200)
+    expect(item["id"]).to eq(item3.id.to_s)
+  end
+
+  it "sends all items matching a query" do 
+    merchant = Merchant.create(name: "MonsterShop")
+    item1_params = {name: "desk", description: "cool", unit_price: 12, merchant_id: merchant.id}
+    item1 = Item.create!(item1_params)
+    item2_params = {name: "door", description: "long", unit_price: 200, merchant_id: merchant.id}
+    item2 = Item.create!(item2_params)
+    item3_params = {name: "modern desk", description: "very stylish and functional", unit_price: 200, merchant_id: merchant.id}
+    item3 = Item.create!(item3_params)
+    get "/api/v1/items/find_all?name=desk" 
+    expect(response).to be_successful
+    items = JSON.parse(response.body)["data"]
+    expect(items.count).to eq(2)
+    expect(items[0]["id"]).to eq(item1.id.to_s)
+    expect(items[1]["id"]).to eq(item3.id.to_s)
+    get "/api/v1/items/find_all?unit_price=200"
+    expect(response).to be_successful
+    items = JSON.parse(response.body)["data"]
+    expect(items.count).to eq(2)
+    expect(items[0]["id"]).to eq(item2.id.to_s)
+    expect(items[1]["id"]).to eq(item3.id.to_s)
   end
   
 end
