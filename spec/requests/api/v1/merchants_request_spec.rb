@@ -96,26 +96,125 @@ describe "Merchants API" do
   end
 
   it "returns the merchant(s) with the most revenues" do
-    num_customer = 50
-    num_merchant = 10
-    num_items_per_merchant = 10
-    num_invoice = 100
+
+    num_customer = 5
+    num_merchant = 5
+
     customers = create_list(:random_customer, num_customer)
     merchants = create_list(:random_merchant, num_merchant)
 
+    create_list(:random_item, 2, unit_price: 10, merchant: merchants[0])
+    create_list(:random_item, 2, unit_price: 5, merchant: merchants[1])
+    create_list(:random_item, 2, unit_price: 15, merchant: merchants[2])
+    create_list(:random_item, 2, unit_price: 25, merchant: merchants[3])
+    create_list(:random_item, 2, unit_price: 20, merchant: merchants[4])
+
+    create_list(:invoice, 2, merchant: merchants[0], customer: customers[rand(num_customer)])
+    create_list(:invoice, 2, merchant: merchants[1], customer: customers[rand(num_customer)])
+    create_list(:invoice, 2, merchant: merchants[2], customer: customers[rand(num_customer)])
+    create_list(:invoice, 2, merchant: merchants[3], customer: customers[rand(num_customer)])
+    create_list(:invoice, 2, merchant: merchants[4], customer: customers[rand(num_customer)])
+
     merchants.each do |merchant|
-      create_list(:random_item, num_items_per_merchant, merchant: merchant)
-    end  
-    invoices = create_list(:invoice, num_invoice, merchant: merchants[rand(num_merchant)], customer: customers[rand(num_customer)])
-    invoices.each do |invoice|
-      5.times do
-        random_item = merchants[rand(num_merchant)].items[rand(num_items_per_merchant)]
-        create(:invoice_item, item: random_item, unit_price: random_item.unit_price, quantity: (rand(10)+1), invoice: invoice)
+      create(:invoice_item, item: merchant.items[0], unit_price: merchant.items[0].unit_price, quantity: 2, invoice: merchant.invoices[0])
+      create(:invoice_item, item: merchant.items[1], unit_price: merchant.items[1].unit_price, quantity: 2, invoice: merchant.invoices[1])
+      merchant.invoices.each do |invoice|
+        create(:random_transaction, result: 1, invoice: merchant.invoices[0])
+        create(:random_transaction, result: 1, invoice: merchant.invoices[1])
       end
-      create(:random_transaction, result: rand(1), invoice: invoice)
     end
-    
-    
+
+    get "/api/v1/merchants/most_revenue?quantity=2"
+    expect(response).to be_successful
+    returned_merchants = JSON.parse(response.body)["data"]
+    expect(returned_merchants[0]["id"]).to eq(merchants[3].id.to_s)
+    expect(returned_merchants[1]["id"]).to eq(merchants[4].id.to_s)
   end
+
+  it "returns the merchant who sell the most items" do
+    num_customer = 5
+    num_merchant = 5
+
+    customers = create_list(:random_customer, num_customer)
+    merchants = create_list(:random_merchant, num_merchant)
+
+    create_list(:random_item, 1, unit_price: 10, merchant: merchants[0])
+    create_list(:random_item, 1, unit_price: 5, merchant: merchants[1])
+    create_list(:random_item, 1, unit_price: 15, merchant: merchants[2])
+    create_list(:random_item, 1, unit_price: 25, merchant: merchants[3])
+    create_list(:random_item, 1, unit_price: 20, merchant: merchants[4])
+
+    create_list(:invoice, 2, merchant: merchants[0], customer: customers[rand(num_customer)])
+    create_list(:invoice, 2, merchant: merchants[1], customer: customers[rand(num_customer)])
+    create_list(:invoice, 2, merchant: merchants[2], customer: customers[rand(num_customer)])
+    create_list(:invoice, 2, merchant: merchants[3], customer: customers[rand(num_customer)])
+    create_list(:invoice, 2, merchant: merchants[4], customer: customers[rand(num_customer)])
+
+    create(:invoice_item, item: merchants[0].items[0], unit_price: merchants[0].items[0].unit_price, quantity: 10, invoice: merchants[0].invoices[0])
+    create(:invoice_item, item: merchants[1].items[0], unit_price: merchants[1].items[0].unit_price, quantity: 15, invoice: merchants[1].invoices[0])
+    create(:invoice_item, item: merchants[2].items[0], unit_price: merchants[2].items[0].unit_price, quantity: 5, invoice: merchants[2].invoices[0])
+    create(:invoice_item, item: merchants[3].items[0], unit_price: merchants[3].items[0].unit_price, quantity: 30, invoice: merchants[3].invoices[0])
+    create(:invoice_item, item: merchants[4].items[0], unit_price: merchants[4].items[0].unit_price, quantity: 25, invoice: merchants[4].invoices[0])
+
+    create(:random_transaction, result: 1, invoice: merchants[0].invoices[0])
+    create(:random_transaction, result: 1, invoice: merchants[1].invoices[0])
+    create(:random_transaction, result: 0, invoice: merchants[2].invoices[0])
+    create(:random_transaction, result: 1, invoice: merchants[3].invoices[0])
+    create(:random_transaction, result: 0, invoice: merchants[4].invoices[0])
+
+    get "/api/v1/merchants/most_items?quantity=2"
+    expect(response).to be_successful
+    returned_merchants = JSON.parse(response.body)["data"]
+    expect(returned_merchants[0]["id"]).to eq(merchants[3].id.to_s)
+    expect(returned_merchants[1]["id"]).to eq(merchants[1].id.to_s)
+  end   
+
+  it "returns the revenue across date range" do
+
+    num_customer = 5
+    num_merchant = 5
+
+    customers = create_list(:random_customer, num_customer)
+    merchants = create_list(:random_merchant, num_merchant)
+
+    create_list(:random_item, 1, unit_price: 10, merchant: merchants[0])
+    create_list(:random_item, 1, unit_price: 5, merchant: merchants[1])
+    create_list(:random_item, 1, unit_price: 15, merchant: merchants[2])
+    create_list(:random_item, 1, unit_price: 25, merchant: merchants[3])
+    create_list(:random_item, 1, unit_price: 20, merchant: merchants[4])
+
+    create_list(:invoice, 2, merchant: merchants[0], customer: customers[rand(num_customer)], created_at: "2012-03-09")
+    create_list(:invoice, 2, merchant: merchants[1], customer: customers[rand(num_customer)], created_at: "2012-03-10")
+    create_list(:invoice, 2, merchant: merchants[2], customer: customers[rand(num_customer)], created_at: "2012-03-07")
+    create_list(:invoice, 2, merchant: merchants[3], customer: customers[rand(num_customer)], created_at: "2012-03-15")
+    create_list(:invoice, 2, merchant: merchants[4], customer: customers[rand(num_customer)], created_at: "2012-03-20")
+
+    create(:invoice_item, item: merchants[0].items[0], unit_price: merchants[0].items[0].unit_price, quantity: 10, invoice: merchants[0].invoices[0])
+    create(:invoice_item, item: merchants[1].items[0], unit_price: merchants[1].items[0].unit_price, quantity: 15, invoice: merchants[1].invoices[0])
+    create(:invoice_item, item: merchants[2].items[0], unit_price: merchants[2].items[0].unit_price, quantity: 5, invoice: merchants[2].invoices[0])
+    create(:invoice_item, item: merchants[3].items[0], unit_price: merchants[3].items[0].unit_price, quantity: 30, invoice: merchants[3].invoices[0])
+    create(:invoice_item, item: merchants[4].items[0], unit_price: merchants[4].items[0].unit_price, quantity: 25, invoice: merchants[4].invoices[0])
+
+    create(:random_transaction, result: 1, invoice: merchants[0].invoices[0])
+    create(:random_transaction, result: 1, invoice: merchants[1].invoices[0])
+    create(:random_transaction, result: 0, invoice: merchants[2].invoices[0])
+    create(:random_transaction, result: 1, invoice: merchants[3].invoices[0])
+    create(:random_transaction, result: 0, invoice: merchants[4].invoices[0])
+
+    get "/api/v1/revenue?start=2012-03-10&end=2012-03-17"
+    expect(response).to be_successful
+    result = JSON.parse(response.body)
+    expect(result["data"]["attributes"]["revenue"]).to eq(15*5+30*25.0)
+  end   
+
+  it "returns the revenue for a merchant" do
+
+    merchant = create(:random_merchant)
+    get "/api/v1/merchants/#{merchant.id}/revenue"
+    expect(response).to be_successful
+  end
+
+
+
     
 end
