@@ -1,6 +1,7 @@
 require 'rails_helper'
 
 describe "items API" do
+  
 
   it "can send a list of items" do
     merchant = create(:merchant)
@@ -22,12 +23,15 @@ describe "items API" do
 
   it "can create a new item" do
     merchant = create(:merchant)
-    create_list(:item, 4, merchant: merchant)
-    item_params = {name: "a desk", description: "cool", unit_price: "12", merchant_id: merchant.id}
+    create_list(:random_item, 4, merchant: merchant)
+    item_params = {name: "a desk", description: "cool", unit_price: 12, merchant_id: merchant.id}
+    
     post "/api/v1/items", params: {item: item_params}
     expect(response).to be_successful
     my_item = Item.last 
     expect(my_item.name).to eq(item_params[:name])
+    item = JSON.parse(response.body)['data']
+    expect(item['attributes']['name']).to eq(item_params[:name])
   end
 
   it "updates an item" do
